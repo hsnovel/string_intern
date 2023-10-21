@@ -182,7 +182,23 @@ int mempool_init(mempool *pool, usize item_size, usize initial_cap)
 
 void mempool_push(mempool *pool, void *data, usize index)
 {
-	assert(index * pool->item_size <= pool->cap);
+	if (index * pool->item_size <= pool->cap) {
+		usize newsize = pool->cap * 2;
+		void *tmp = realloc(pool->data, newsize);
+		int i;
+		int base_address;
+		if (tmp == NULL) {
+			tmp = malloc(newsize);
+			memcpy(tmp, pool->data, newsize);
+		}
+		pool->data = tmp;
+		pool->cap = newsize;
+
+		/* Initialize rest of the memory to -1 */
+		for (i = newsize / 2; i < newsize; i++) {
+			((ssize*)pool->data)[i] = -1;
+		}
+	}
 	memcpy(pool->data + index * pool->item_size, data, pool->item_size);
 }
 
